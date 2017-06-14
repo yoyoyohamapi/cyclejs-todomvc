@@ -1,7 +1,7 @@
 import { section, div } from '@cycle/dom';
 
 export default function view(state$) {
-  const vtree$ = state$.map(({header, tasks, footer}) => {
+  return state$.map(({header, tasks, footer}) => {
     return section('.todoapp', [
       div([
         header,
@@ -10,8 +10,4 @@ export default function view(state$) {
       ])
     ]);
   });
-
-  return {
-    DOM: vtree$
-  };
 };
