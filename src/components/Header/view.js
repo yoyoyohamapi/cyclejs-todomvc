@@ -8,6 +8,6 @@ export default function view(state$) {
         placeholder: 'What needs to be done?',
         name: 'newTodo'
       })
-    ]);
+    ])
   );
 }

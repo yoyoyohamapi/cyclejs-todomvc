@@ -1,27 +1,60 @@
-import { section, } from '@cycle/dom';
-import Header from './Header';
-import Task from './Task';
-import Footer from './Footer';
-import isolate from '@cycle/isolate';
+import xs from 'xstream';
 
-const todos = [];
+import intent from './intent';
+import model from './model';
+import view from './view';
+
+import isolate from '@cycle/isolate';
+import Header from '../Header';
+import Task from '../Task';
+import Footer from '../Footer';
 
 export default function List(sources) {
   const headerSinks = Header(sources);
-  const taskSinks = todos.map(todo => isolate(Task, todo.id)(sources));
-  const footerSinks = Footer(sources);
 
-  return xs.combine(
-    headerSinks.DOM,
-    taskSinks.DOM,
-    footerSinks.DOM
-  ).map(([header, task, footer]) => {
-    return section('.todoapp', [
-      div([
-        header,
-        section('.main', todos.map()),
-        footer
-      ])
-    ])
+  const actionProxy$ = xs.create();
+
+  const action$ = intent({
+    DOM: sources.DOM,
+    action$: actionProxy$
   });
-};
+
+  const state$ = model(action$);
+
+  const combinedState$ = state$.map(({ todos }) => {
+    const tasks = todos.map(todo => isolate(Task, todo.id)({
+      DOM: sources.DOM,
+      props$: xs.of(todo)
+    }));
+    const footerSinks = Footer({
+      DOM: sources.DOM,
+      props$: xs.of({ leftCount: todos.filter(todo => !todo.completed).length })
+    });
+    actionProxy$.imitate(
+      xs.merge(
+        headerSinks.action$,
+        footerSinks.action$,
+        xs.merge(
+          tasks.map(sinks => sinks.action$)
+        )
+      )
+    );
+    return xs.combine(
+      headerSinks.DOM,
+      tasks.map(sinks => sinks.DOM),
+      footerSinks.DOM
+    ).map(([header, tasks, footer]) => {
+      return {
+        header,
+        footer,
+        tasks
+      };
+    });
+  })
+
+  const vtree$ = view(combinedState$);
+
+  return {
+    DOM: vtree$
+  };
+}

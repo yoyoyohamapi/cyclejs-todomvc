@@ -4,7 +4,7 @@ import view from './view';
 
 export default function Footer(sources) {
   const action$ = intent(sources);
-  const state$ = model(action$);
+  const state$ = model(action$, sources.props$);
   const vtree$ = view(state$);
 
   return {

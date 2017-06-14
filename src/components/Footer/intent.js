@@ -1,6 +1,6 @@
 import xs from 'xstream';
 
-export default funciton intent(sources) {
+export default function intent(sources) {
   return xs.merge(
     // 筛选 todo
     sources.DOM.select('.filters > li > a')
@@ -11,6 +11,6 @@ export default funciton intent(sources) {
     // 清除已完成的 todo
     sources.DOM.select('.clear-completed')
       .events('click')
-      .mapTo({type: 'clearCompleted'})
+      .mapTo({type: 'clear'})
   );
 }

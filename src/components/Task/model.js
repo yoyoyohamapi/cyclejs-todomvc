@@ -1,11 +1,14 @@
 import xs from 'xstream';
 
-export default function model(action$) {
-  const initReducer$ = xs.of(function initReducer(state) {
+export default function model(action$, props$) {
+  const initReducer$ = props$.map(props => function initReducer(state) {
     return {
+      id: null,
       title: '',
-      completed: false
-      editing: false
+      completed: false,
+      editing: false,
+      hidden: false,
+      ...props
     };
   });
 
@@ -18,5 +21,16 @@ export default function model(action$) {
       };
     });
 
-  return xs.merge(initReducer$, editReducer$);
+  const compeleteReducer$ = action$
+    .filter(action => action.type === 'toggle')
+    .mapTo(function completeReducer(state) {
+      return {
+        ...state,
+        editing: !state.completed
+      }
+    });
+
+
+
+  return xs.merge(initReducer$, editReducer$, compeleteReducer$);
 }
