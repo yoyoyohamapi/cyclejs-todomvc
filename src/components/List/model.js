@@ -1,12 +1,6 @@
 import xs from 'xstream';
 
 export default function model(action$) {
-  const initReducer$ = xs.of(function initReducer(state) {
-    return {
-      todos: []
-    };
-  });
-
   const newReducer$ = action$
     .filter(action => action.type === 'new')
     .map(action => function newReducer(state) {
@@ -63,9 +57,10 @@ export default function model(action$) {
     })
 
   return xs.merge(
-    initReducer$,
     newReducer$,
     clearReducer$,
     filterReducer$
-  );
+  ).fold((state, reducer) => reducer(state), {
+    todos: []
+  });
 }

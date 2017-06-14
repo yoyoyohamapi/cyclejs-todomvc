@@ -1,13 +1,8 @@
 import xs from 'xstream';
 
 export default function model(action$, props$) {
-  const initReducer$ = props$.map(props => function initReducer(state) {
+  const propsReducer$ = props$.map(props => {
     return {
-      id: null,
-      title: '',
-      completed: false,
-      editing: false,
-      hidden: false,
       ...props
     };
   });
@@ -30,7 +25,15 @@ export default function model(action$, props$) {
       }
     });
 
-
-
-  return xs.merge(initReducer$, editReducer$, compeleteReducer$);
+  return xs.merge(
+    propsReducer$,
+    editReducer$,
+    compeleteReducer$
+  ).fold((state, reducer) => reducer(state), {
+    id: null,
+    title: '',
+    completed: false,
+    editing: false,
+    hidden: false
+  });
 }
