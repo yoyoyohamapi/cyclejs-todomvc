@@ -1,21 +1,27 @@
-import { lable, button, div, li } from '@cycle/dom';
+import { label, button, div, li, input } from '@cycle/dom';
 
 export default function view(state$) {
-  return state$.map(({ editing, completed, title }) => {
+  return state$.map(({ id, editing, completed, hidden, title }) => {
+    console.log(id, hidden);
     return li('.todoRoot', {
       class: {
         editing,
         completed
+      },
+      style: {
+        display: hidden ? 'none' : 'block'
       }
     }, [
       div('.view', [
         input('.toggle', {
-          type: 'checkbox'
-        }, ),
+          props: { type: 'checkbox', checked: completed }
+        }),
         label(title),
         button('.destroy')
       ]),
-      input('edit')
+      input('.edit', {
+        props: { type: 'text' }
+      })
     ])
   });
 }

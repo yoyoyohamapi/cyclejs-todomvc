@@ -3,15 +3,23 @@ import xs from 'xstream';
 export default function intent(sources) {
   return xs.merge(
     sources.action$
-      .filter(action => action.type === 'delete')
-      .map(action => ({type: 'delete', payload: action.payload})),
+    .filter(action => action.type === 'destroy')
+    .map(({ id }) => ({ type: 'destroy', id })),
 
     sources.action$
-      .filter(action => action.type === 'new')
-      .map(action => ({type: 'new', payload: action.payload})),
+    .filter(action => action.type === 'new')
+    .map(action => ({ type: 'new', title: action.title })),
 
     sources.action$
-      .filter(action => action.type === 'clear')
-      .mapTo({type: 'clear'})
+    .filter(action => action.type === 'clear')
+    .mapTo({ type: 'clear' }),
+
+    sources.action$
+    .filter(action => action.type === 'filter')
+    .map(({ filter }) => ({ type: 'filter', filter })),
+
+    sources.action$
+    .filter(action => action.type === 'toggle')
+    .map(({ id }) => ({ type: 'toggle', id }))
   );
 }

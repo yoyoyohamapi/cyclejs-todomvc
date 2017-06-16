@@ -8,54 +8,75 @@ import isolate from '@cycle/isolate';
 import Header from '../Header';
 import Task from '../Task';
 import Footer from '../Footer';
+const filters = ['All', 'Active', 'Completed'];
 
-export default function List( sources ) {
-  const headerSinks = Header( sources );
+let _id = 0;
+
+const id = function () {
+  return _id++;
+}
+
+const TaskWrapper = function (sources) {
+  return function TaskComponent(id, todo) {
+    const task = isolate(Task)({
+      DOM: sources.DOM,
+      props$: xs.of(todo)
+    });
+    return {
+      ...task,
+      action$: task.action$.map(action => ({ ...action, id }))
+    };
+  }
+};
+
+export default function List(sources) {
+  const headerSinks = Header(sources);
+  const headerAction$ = headerSinks.action$;
 
   const actionProxy$ = xs.create();
 
-  const action$ = intent( {
+  const action$ = intent({
     DOM: sources.DOM,
     action$: actionProxy$
-  } );
+  });
 
-  const state$ = model( action$ );
+  const state$ = model(action$, TaskWrapper(sources));
 
-  state$.subscribe( x => console.log( x ) );
+  const footerSinks$ = state$.map(({ todos, filter }) => Footer({
+    DOM: sources.DOM,
+    props$: xs.of({ todos: todos.map(todo => todo), filter, filters})
+  }));
 
-  const combinedState$ = state$.map( ( { todos } ) => {
-    const tasks = todos.map( todo => isolate( Task, todo.id )( {
-      DOM: sources.DOM,
-      props$: xs.of( todo )
-    } ) );
-    const footerSinks = Footer( {
-      DOM: sources.DOM,
-      props$: xs.of( { leftCount: todos.filter( todo => !todo.completed ).length } )
-    } );
-    actionProxy$.imitate(
-      xs.merge(
-        headerSinks.action$,
-        footerSinks.action$,
-        xs.merge(
-          tasks.map( sinks => sinks.action$ )
-        ).flatten()
-      )
-    );
-    console.log(111);
-    return xs.combine(
-      headerSinks.DOM,
-      tasks.map( sinks => sinks.DOM ),
-      footerSinks.DOM
-    ).map( ( [ header, tasks, footer ] ) => {
-      return {
-        header,
-        footer,
-        tasks
-      };
-    } );
-  } ).flatten();
+  const footerAction$ = footerSinks$.map(sinks => sinks.action$).flatten();
+  const footerVtree$ = footerSinks$.map(sinks => sinks.DOM).flatten();
 
-  const vtree$ = view( combinedState$ );
+  const taskAction$ = state$
+    .map(({ todos }) => xs.merge(...todos.map(todo => todo.action$)))
+    .flatten();
+
+  actionProxy$.imitate(xs.merge(
+    headerAction$,
+    footerAction$,
+    taskAction$
+  ));
+
+  const tasksVtree$ = state$
+    .map(({ todos }) => xs.combine(...todos.map(todo => todo.DOM)))
+    .flatten();
+
+  const combinedState$ = xs.combine(
+    headerSinks.DOM,
+    tasksVtree$,
+    footerVtree$
+  ).map(([header, tasks, footer]) => {
+    return {
+      header,
+      footer,
+      tasks
+    };
+  });
+
+  const vtree$ = view(combinedState$);
 
   return {
     DOM: vtree$

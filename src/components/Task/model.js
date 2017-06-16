@@ -1,39 +1,35 @@
 import xs from 'xstream';
 
 export default function model(action$, props$) {
-  const propsReducer$ = props$.map(props => {
-    return {
-      ...props
-    };
-  });
-
-  const editReducer$ = action$
-    .filter(action => action.type === 'toggleEdit')
-    .mapTo(function editReducer(state) {
+  const startEditReducer$ = action$
+    .filter(action => action.type === 'startEdit')
+    .mapTo(function startEditReducer(state) {
       return {
         ...state,
-        editing: !state.editing,
+        editing: true,
       };
     });
 
-  const compeleteReducer$ = action$
-    .filter(action => action.type === 'toggle')
-    .mapTo(function completeReducer(state) {
+  const doneEditReudcer$ = action$
+    .filter(action => action.type === 'doneEdit')
+    .mapTo(function doneEditReducer(state) {
       return {
         ...state,
-        editing: !state.completed
+        editing: false
       }
     });
 
-  return xs.merge(
-    propsReducer$,
-    editReducer$,
-    compeleteReducer$
-  ).fold((state, reducer) => reducer(state), {
-    id: null,
-    title: '',
-    completed: false,
-    editing: false,
-    hidden: false
-  });
+  const reducer$ = xs.merge(
+    startEditReducer$,
+    doneEditReudcer$
+  );
+
+  return props$
+    .startWith({
+      completed: false,
+      editing: false,
+      hidden: false
+    })
+    .map(props => reducer$.fold((state, reducer) => reducer(state), props))
+    .flatten().remember();
 }
