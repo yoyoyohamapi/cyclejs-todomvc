@@ -20,6 +20,15 @@ export default function intent(sources) {
 
     sources.action$
     .filter(action => action.type === 'toggle')
-    .map(({ id }) => ({ type: 'toggle', id }))
+    .map(({ id }) => ({ type: 'toggle', id })),
+
+    sources.DOM
+    .select('.toggle-all + label')
+    .events('click')
+    .mapTo({ type: 'toggleAll' }),
+
+    sources.action$
+    .filter(action => action.type === 'doneEdit')
+    .map(({ id, title }) => ({ type: 'doneEdit', id, title }))
   );
 }

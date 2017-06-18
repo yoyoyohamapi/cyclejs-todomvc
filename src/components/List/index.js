@@ -44,7 +44,7 @@ export default function List(sources) {
 
   const footerSinks$ = state$.map(({ todos, filter }) => Footer({
     DOM: sources.DOM,
-    props$: xs.of({ todos: todos.map(todo => todo), filter, filters})
+    props$: xs.of({ todos: todos.map(todo => todo), filter, filters })
   }));
 
   const footerAction$ = footerSinks$.map(sinks => sinks.action$).flatten();
@@ -65,11 +65,13 @@ export default function List(sources) {
     .flatten();
 
   const combinedState$ = xs.combine(
+    state$,
     headerSinks.DOM,
     tasksVtree$,
     footerVtree$
-  ).map(([header, tasks, footer]) => {
+  ).map(([state, header, tasks, footer]) => {
     return {
+      state,
       header,
       footer,
       tasks

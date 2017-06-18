@@ -43,6 +43,25 @@ export default function model(action$, TaskComponent) {
       };
     });
 
+  const doneEditReducer$ = action$
+    .filter(action => action.type === 'doneEdit')
+    .map(action => function doneEditReducer(state) {
+      return {
+        ...state,
+        todos: state.todos.map(todo => {
+          if (todo.id === action.id) {
+            const modified = {
+              ...todo,
+              title: action.title
+            };
+            const out = TaskComponent(todo.id, modified);
+            return { ...modified, action$: out.action$, DOM: out.DOM };
+          }
+          return todo;
+        })
+      };
+    });
+
   const filterReducer$ = action$
     .filter(action => action.type === 'filter')
     .map(action => function filterReducer(state) {
@@ -97,7 +116,8 @@ export default function model(action$, TaskComponent) {
           if (todo.id === action.id) {
             const modified = {
               ...todo,
-              completed: !todo.completed
+              completed: !todo.completed,
+              hidden: state.filter !== 'All'
             };
             const out = TaskComponent(todo.id, modified);
             return { ...modified, action$: out.action$, DOM: out.DOM };
@@ -107,12 +127,32 @@ export default function model(action$, TaskComponent) {
       };
     });
 
+  const toggleAllReducer$ = action$
+    .filter(action => action.type === 'toggleAll')
+    .map(action => function toggleAllReducer(state) {
+      const completed = state.todos.every(todo => todo.completed);
+      return {
+        ...state,
+        todos: state.todos.map(todo => {
+          const modified = {
+            ...todo,
+            completed: !completed,
+            hidden: state.filter === 'All' ? false : !completed ? state.filter === 'Active' : state.filter === 'Completed'
+          };
+          const out = TaskComponent(todo.id, modified);
+          return { ...modified, action$: out.action$, DOM: out.DOM };
+        })
+      }
+    });
+
   return xs.merge(
     newReducer$,
     clearReducer$,
     destroyReducer$,
+    doneEditReducer$,
     filterReducer$,
-    toggleReducer$
+    toggleReducer$,
+    toggleAllReducer$
   ).fold((state, reducer) => reducer(state), {
     todos: [],
     filter: 'All'

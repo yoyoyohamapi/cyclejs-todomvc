@@ -2,7 +2,6 @@ import { label, button, div, li, input } from '@cycle/dom';
 
 export default function view(state$) {
   return state$.map(({ id, editing, completed, hidden, title }) => {
-    console.log(id, hidden);
     return li('.todoRoot', {
       class: {
         editing,
@@ -20,7 +19,16 @@ export default function view(state$) {
         button('.destroy')
       ]),
       input('.edit', {
-        props: { type: 'text' }
+        props: { type: 'text' },
+        hook: {
+          update: (oldVNode, { elm }) => {
+            elm.value = title;
+            if (editing) {
+              elm.focus();
+              elm.selectionStart = elm.value.length;
+            }
+          }
+        }
       })
     ])
   });
