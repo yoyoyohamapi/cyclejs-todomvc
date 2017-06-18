@@ -6,7 +6,7 @@ function genId() {
   return _id++;
 }
 
-export default function model(action$, TaskComponent) {
+export default function model(action$, initState$, TaskComponent) {
   const newReducer$ = action$
     .filter(action => action.type === 'new')
     .map(({ title }) => function newReducer(state) {
@@ -146,16 +146,7 @@ export default function model(action$, TaskComponent) {
       }
     });
 
-  const changeRouteReducer$ = action$
-    .filter(action => action.type === 'changeRoute')
-    .map(({ route }) => function changeRouteReducer(state) {
-      return {
-        ...state,
-        filter: route.replace('/', '')
-      };
-    })
-
-  return xs.merge(
+  const $reducer = xs.merge(
     newReducer$,
     clearReducer$,
     destroyReducer$,
@@ -163,8 +154,26 @@ export default function model(action$, TaskComponent) {
     filterReducer$,
     toggleReducer$,
     toggleAllReducer$
-  ).fold((state, reducer) => reducer(state), {
-    todos: [],
-    filter: 'All'
-  }).remember();
+  );
+
+  return initState$
+    .map(({ todos, filter }) => {
+      return $reducer.fold((state, reducer) => reducer(state), {
+        todos: todos.map(todo => {
+          const id = genId();
+          const newTodo = {
+            id,
+            title: todo.title,
+            completed: todo.completed,
+            editing: false,
+            hidden: filter === 'ALL' ? false : todo.completed ? filter === 'ACTIVE' : filter === 'COMPLETED'
+          };
+          const out = TaskComponent(id, newTodo);
+          return { ...newTodo, DOM: out.DOM, action$: out.action$ };
+        }),
+        filter
+      });
+    })
+    .flatten()
+    .remember();
 }

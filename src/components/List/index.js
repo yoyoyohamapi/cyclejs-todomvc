@@ -41,7 +41,16 @@ export default function List(sources) {
     action$: actionProxy$
   });
 
-  const state$ = model(action$, TaskWrapper(sources));
+  const localStorage$ = sources.storage.local.getItem('todos-cycle').take(1);
+  const initState$ = xs.combine(
+    localStorage$,
+    sources.History.take(1)
+  ).map(([json, location]) => ({
+    todos: JSON.parse(json) || [],
+    filter: (location.hash.replace('#/', '') || 'All').toUpperCase()
+  }));
+
+  const state$ = model(action$, initState$, TaskWrapper(sources));
 
   const footerSinks$ = state$.map(({ todos, filter }) => Footer({
     DOM: sources.DOM,
@@ -54,6 +63,8 @@ export default function List(sources) {
   const taskAction$ = state$
     .map(({ todos }) => xs.merge(...todos.map(todo => todo.action$)))
     .flatten();
+
+
 
   actionProxy$.imitate(xs.merge(
     headerAction$,
@@ -81,7 +92,16 @@ export default function List(sources) {
 
   const vtree$ = view(combinedState$);
 
+  const storage$ = state$.map(({ todos }) => ({
+    key: 'todos-cycle',
+    value: JSON.stringify(todos.map(todo => ({
+      title: todo.title,
+      completed: todo.completed
+    })))
+  }));
+
   return {
-    DOM: vtree$
+    DOM: vtree$,
+    storage: storage$
   };
 }

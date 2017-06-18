@@ -1,12 +1,13 @@
 import xs from 'xstream';
+import dropRepeats from 'xstream/extra/dropRepeats';
 
 export default function intent(sources) {
   return xs.merge(
-    // 路由
     sources.History
-    .startWith({ pathname: '/' })
-    .map(location => location.pathname.replace('/', ''))
-    .map(filter => ({ type: 'filter', filter })),
+    .startWith({ hash: '#/all' })
+    .map(location => location.hash)
+    .compose(dropRepeats())
+    .map(hash => ({ type: 'filter', filter: hash.replace('#/', '') })),
 
     sources.action$
     .filter(action => action.type === 'destroy')
@@ -19,10 +20,6 @@ export default function intent(sources) {
     sources.action$
     .filter(action => action.type === 'clear')
     .mapTo({ type: 'clear' }),
-
-    sources.action$
-    .filter(action => action.type === 'filter')
-    .map(({ filter }) => ({ type: 'filter', filter })),
 
     sources.action$
     .filter(action => action.type === 'toggle')
