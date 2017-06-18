@@ -2,6 +2,12 @@ import xs from 'xstream';
 
 export default function intent(sources) {
   return xs.merge(
+    // 路由
+    sources.History
+    .startWith({ pathname: '/' })
+    .map(location => location.pathname.replace('/', ''))
+    .map(filter => ({ type: 'filter', filter })),
+
     sources.action$
     .filter(action => action.type === 'destroy')
     .map(({ id }) => ({ type: 'destroy', id })),

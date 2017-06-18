@@ -37,6 +37,7 @@ export default function List(sources) {
 
   const action$ = intent({
     DOM: sources.DOM,
+    History: sources.History,
     action$: actionProxy$
   });
 

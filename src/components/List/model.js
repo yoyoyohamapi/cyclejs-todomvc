@@ -16,7 +16,7 @@ export default function model(action$, TaskComponent) {
         title,
         completed: false,
         editing: false,
-        hidden: state.filter === 'Completed'
+        hidden: state.filter.toUpperCase() === 'COMPLETED'
       };
       const out = TaskComponent(id, newTodo);
       return {
@@ -64,11 +64,11 @@ export default function model(action$, TaskComponent) {
 
   const filterReducer$ = action$
     .filter(action => action.type === 'filter')
-    .map(action => function filterReducer(state) {
-      switch (action.filter) {
-        case 'Active':
+    .map(({ filter }) => function filterReducer(state) {
+      switch (filter.toUpperCase()) {
+        case 'ACTIVE':
           return {
-            filter: action.filter,
+            filter: filter,
             todos: state.todos.map(todo => {
               const hidden = todo.completed;
               const modified = {
@@ -79,9 +79,9 @@ export default function model(action$, TaskComponent) {
               return { ...modified, action$: out.action$, DOM: out.DOM };
             })
           };
-        case 'Completed':
+        case 'COMPLETED':
           return {
-            filter: action.filter,
+            filter: filter,
             todos: state.todos.map(todo => {
               const hidden = !todo.completed;
               const modified = {
@@ -94,7 +94,7 @@ export default function model(action$, TaskComponent) {
           };
         default:
           return {
-            filter: action.filter,
+            filter: filter,
             todos: state.todos.map(todo => {
               const modified = {
                 ...todo,
@@ -117,7 +117,7 @@ export default function model(action$, TaskComponent) {
             const modified = {
               ...todo,
               completed: !todo.completed,
-              hidden: state.filter !== 'All'
+              hidden: state.filter.toUpperCase() !== 'ALL'
             };
             const out = TaskComponent(todo.id, modified);
             return { ...modified, action$: out.action$, DOM: out.DOM };
@@ -131,19 +131,29 @@ export default function model(action$, TaskComponent) {
     .filter(action => action.type === 'toggleAll')
     .map(action => function toggleAllReducer(state) {
       const completed = state.todos.every(todo => todo.completed);
+      const filter = state.filter.toUpperCase();
       return {
         ...state,
         todos: state.todos.map(todo => {
           const modified = {
             ...todo,
             completed: !completed,
-            hidden: state.filter === 'All' ? false : !completed ? state.filter === 'Active' : state.filter === 'Completed'
+            hidden: filter === 'ALL' ? false : !completed ? filter === 'ACTIVE' : filter === 'COMPLETED'
           };
           const out = TaskComponent(todo.id, modified);
           return { ...modified, action$: out.action$, DOM: out.DOM };
         })
       }
     });
+
+  const changeRouteReducer$ = action$
+    .filter(action => action.type === 'changeRoute')
+    .map(({ route }) => function changeRouteReducer(state) {
+      return {
+        ...state,
+        filter: route.replace('/', '')
+      };
+    })
 
   return xs.merge(
     newReducer$,

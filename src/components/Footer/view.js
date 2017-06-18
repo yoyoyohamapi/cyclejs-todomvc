@@ -14,7 +14,7 @@ export default function view(state$) {
         filters.map(f => li([
           a({
             props: { href: `#/${f.toLowerCase()}` },
-            class: { selected: f == filter }
+            class: { selected: f.toUpperCase() == filter.toUpperCase() }
           }, f)
         ]))
       ),
